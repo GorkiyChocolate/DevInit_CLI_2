@@ -1,48 +1,64 @@
 use std::path::PathBuf;
+use clap::{arg, value_parser, Arg, ArgAction, Command};
 
-use clap::{ArgAction, Command, arg, value_parser};
-
-fn main(){
-    let matches = Command::new("devinit_cli_2").arg(arg!([name] "Aаваппв"))
+fn main() {
+    let matches = Command::new("file-loader")
+        .version("0.0.1")
+        .about("Ratatata")
+        .arg_required_else_help(true)
         .arg(
-            arg!(
-                -c --config <FILE> "Sets a custom config file"
-            )
-            .required(false)
-            .value_parser(value_parser!(PathBuf)),
+            Arg::new("INPUT")
+                .help("Path way")
+                .required(true)
+                .index(1)
+                .value_parser(value_parser!(PathBuf)),
         )
-        .arg(arg!(
-            -d --debug ... "debuging"
-        ))
-        .subcommand(
-            Command::new("test")
-                .about("does test")
-                .arg(arg!(-l --list "lists test").action(ArgAction::SetTrue)),
 
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .help("Output")
+                .value_name("Dir")
+                .value_parser(value_parser!(PathBuf)),
+        )
+
+        .arg(
+            Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .long("verbose")
+                .help("LO")
+                .action(ArgAction::SetTrue),
+        )
+
+        .subcommand(
+            Command::new("stats")
+                .about("Collect")
+                .arg(
+                    Arg::new("detailed")
+                        .short('d')
+                        .long("detaield")
+                        .action(ArgAction::SetTrue)
+                        .help("detailed"),
+                ),
         )
         .get_matches();
 
-    if let Some(name) = matches.get_one::<String>("name") {
-        println!("Value for name: {name}")
-    }
-    if let Some(config_path) = matches.get_one::<PathBuf>("config") {
-        println!("Value for config: {}", config_path.display());
+    if let Some(input_path) = matches.get_one::<PathBuf>("INPUT") {
+        println!("file: {}", input_path.display());
     }
 
-    match matches.get_one::<u8>("debug")
-        .expect("counts are defaulted")
-    {
-        0 => println!("Debug mode is off"),
-        1 => println!("Debug mode is kind of on"),
-        2 => println!("Debug mode is on"),
-        _ => println!("Dont be crazy"),
+    if let Some(output_dir) = matches.get_one::<PathBuf>("output") {
+        println!("Output: {}", output_dir.display());
     }
 
-    if let Some(matches) = matches.subcommand_matches("test") {
-        if matches.get_flag("list") {
-            println!("Printing test list");
-        } else {
-            println!("not printing test list")
-        }
+    if matches.get_flag("verbose") {
+        println!("[Debug] debug mod");
+    }
+
+    if let Some(sub_matches) = matches.subcommand_matches("stats") {
+        let is_detailed = sub_matches.get_flag("detailed");
+        println!("launching stats")
     }
 }
