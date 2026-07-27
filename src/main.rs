@@ -1,54 +1,48 @@
 use std::path::PathBuf;
-use clap::{Parser, Subcommand};
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli{
-    name: Option<String>,
+use clap::{ArgAction, Command, arg, value_parser};
 
-    #[arg(short, long, value_name = "FILE")]
-    config: Option<PathBuf>,
+fn main(){
+    let matches = Command::new("devinit_cli_2").arg(arg!([name] "Aаваппв"))
+        .arg(
+            arg!(
+                -c --config <FILE> "Sets a custom config file"
+            )
+            .required(false)
+            .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(arg!(
+            -d --debug ... "debuging"
+        ))
+        .subcommand(
+            Command::new("test")
+                .about("does test")
+                .arg(arg!(-l --list "lists test").action(ArgAction::SetTrue)),
 
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    debug: u8,
+        )
+        .get_matches();
 
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Test {
-        #[arg(short, long)]
-        list:bool
-    },
-}
-fn main() {
-    let cli = Cli::parse();
-
-    if let Some(name) = cli.name.as_deref() {
+    if let Some(name) = matches.get_one::<String>("name") {
         println!("Value for name: {name}")
     }
-
-    if let Some(config_path) = cli.config.as_deref(){
+    if let Some(config_path) = matches.get_one::<PathBuf>("config") {
         println!("Value for config: {}", config_path.display());
     }
 
-    match cli.debug {
+    match matches.get_one::<u8>("debug")
+        .expect("counts are defaulted")
+    {
         0 => println!("Debug mode is off"),
-        1 => println!("Debug mode os kind of on"),
+        1 => println!("Debug mode is kind of on"),
         2 => println!("Debug mode is on"),
-        _ => println!("Don't be crazy"),
+        _ => println!("Dont be crazy"),
     }
 
-    match &cli.command {
-        Some(Commands::Test { list }) => {
-            if *list {
-                println!("Printing testing lists...");
-            } else {
-                println!("Not printing testing lists...")
-            }
+    if let Some(matches) = matches.subcommand_matches("test") {
+        if matches.get_flag("list") {
+            println!("Printing test list");
+        } else {
+            println!("not printing test list")
         }
-        None => {}
     }
 }
