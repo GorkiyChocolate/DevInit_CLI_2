@@ -1,64 +1,100 @@
+use clap::{value_parser, Arg, ArgAction, Command};
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
-use clap::{arg, value_parser, Arg, ArgAction, Command};
 
-fn main() {
-    let matches = Command::new("file-loader")
+#[derive(Debug, Serialize, Deserialize)]
+struct Post {
+    id: u32,
+    title: String,
+    body: String,
+    #[serde(rename = "userId")]
+    user_id: u32,
+}
+
+fn build_cli() -> Command {
+    Command::new("devinit")
         .version("0.0.1")
-        .about("Ratatata")
+        .author("Gorkiy")
+        .about("Devinit")
         .arg_required_else_help(true)
-        .arg(
-            Arg::new("INPUT")
-                .help("Path way")
-                .required(true)
-                .index(1)
-                .value_parser(value_parser!(PathBuf)),
-        )
-
-        .arg(
-            Arg::new("output")
-                .short('o')
-                .long("output")
-                .help("Output")
-                .value_name("Dir")
-                .value_parser(value_parser!(PathBuf)),
-        )
-
-        .arg(
-            Arg::new("verbose")
-                .short('v')
-                .long("verbose")
-                .long("verbose")
-                .help("LO")
-                .action(ArgAction::SetTrue),
-        )
-
         .subcommand(
-            Command::new("stats")
-                .about("Collect")
+            Command::new("get")
+                .about("get data")
                 .arg(
-                    Arg::new("detailed")
-                        .short('d')
-                        .long("detaield")
-                        .action(ArgAction::SetTrue)
-                        .help("detailed"),
+                    Arg::new("post_id")
+                        .help("Id post")
+                        .required(true)
+                        .value_parser(value_parser!(u32).range(1..=100)),
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .help("Path way")
+                        .value_name("FILE")
+                        .value_parser(value_parser!(PathBuf)),
+                )
+                .arg(
+                    Arg::new("pretty")
+                        .long("pretty")
+                        .help("formate JSON")
+                        .action(ArgAction::SetTrue),
                 ),
         )
-        .get_matches();
+}
 
-    if let Some(input_path) = matches.get_one::<PathBuf>("INPUT") {
-        println!("file: {}", input_path.display());
+async fn fetch_post(id:u32) -> Result<Post, reqwest::Error> {
+    let url = format!("https://jsonplaceholder.typicode.com/posts/{id}");
+    let response = reqwest::get(&url).await?.error_for_status()?;
+    let post = response.json::<Post>().await?;
+    Ok(post)
+}
+
+fn save_to_file(path: &PathBuf, content: &str) -> Result<(), std::io::Error> {
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent)?;
+        }
     }
+    let mut file = File::create(path)?;
+    file.write_all(content.as_bytes())?;
+    Ok(())
+}
 
-    if let Some(output_dir) = matches.get_one::<PathBuf>("output") {
-        println!("Output: {}", output_dir.display());
-    }
+#[tokio::main]
+async fn main(){
+    let matches = build_cli().get_matches();
 
-    if matches.get_flag("verbose") {
-        println!("[Debug] debug mod");
-    }
+    if let Some(sub_matches) = matches.subcommand_matches("get") {
+        let post_id = *sub_matches
+            .get_one::<u32>("post_id")
+            .expect("validation");
+        let output_path = sub_matches.get_one::<PathBuf>("output");
+        let is_pretty = sub_matches.get_flag("pretty");
 
-    if let Some(sub_matches) = matches.subcommand_matches("stats") {
-        let is_detailed = sub_matches.get_flag("detailed");
-        println!("launching stats")
+        println!("Fetching post {post_id}");
+
+        match fetch_post(post_id).await {
+            Ok(post) => {
+                let json_data = if is_pretty {
+                    serde_json::to_string_pretty(&post).unwrap()
+                } else {
+                    serde_json::to_string(&post).unwrap()
+                };
+
+                if let Some(path) = output_path {
+                    match save_to_file(path, &json_data) {
+                        Ok(_) => println!("Success save in: {}", path.display()),
+                        Err(e) => eprintln!("Fail: {e}"),
+                    }
+                } else {
+                    println!("\n -------");
+                    println!("{json_data}");
+                }
+            }
+            Err(e) => eprintln!("Fail connection {e}"),
+        }
     }
 }
