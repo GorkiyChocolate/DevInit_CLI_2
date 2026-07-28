@@ -1,4 +1,3 @@
-use clap::{value_parser, Arg, ArgAction, Command};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
@@ -13,37 +12,6 @@ struct Post {
     user_id: u32,
 }
 
-fn build_cli() -> Command {
-    Command::new("devinit")
-        .version("0.0.1")
-        .author("Gorkiy")
-        .about("Devinit")
-        .arg_required_else_help(true)
-        .subcommand(
-            Command::new("get")
-                .about("get data")
-                .arg(
-                    Arg::new("post_id")
-                        .help("Id post")
-                        .required(true)
-                        .value_parser(value_parser!(u32).range(1..=100)),
-                )
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .help("Path way")
-                        .value_name("FILE")
-                        .value_parser(value_parser!(PathBuf)),
-                )
-                .arg(
-                    Arg::new("pretty")
-                        .long("pretty")
-                        .help("formate JSON")
-                        .action(ArgAction::SetTrue),
-                ),
-        )
-}
 
 async fn fetch_post(id:u32) -> Result<Post, reqwest::Error> {
     let url = format!("https://jsonplaceholder.typicode.com/posts/{id}");
