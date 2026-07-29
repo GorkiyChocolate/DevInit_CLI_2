@@ -1,24 +1,26 @@
-use clap::{value_parser, Arg, ArgAction, Command};
-use crate::structs::CompsoeService;
+use crate::structs;
+use clap::{value_parser, Arg, Command};
 
+//cli builder funciton
 pub fn build_cli() -> Command {
     Command::new("devinit")
         .version("0.0.1")
         .author("Gorkiy")
         .about("Devinit")
         .arg_required_else_help(true)
-        .subcommand(build_add_cli())
+        .subcommand(build_add_cli(&[]))
 }
 
-fn build_add_cli(service: &[ComposeService]) -> Command {
-    let service_names: Vec<String> = services.iter().map(|s| s.name.clone()).collect();
-
+//add comand logic
+fn build_add_cli(service: &[structs::ComposeService]) -> Command {
+    let service_names: Vec<String> = service.iter().map(|s| s.name.clone()).collect();
+    let help_text = String::from("helps");
     Command::new("add")
         .about("Adding dependency")
         .arg(
             Arg::new("service")
                 .help(help_text)
-                .required(1)
+                .required(true)
                 .index(1)
                 .value_parser(builder_possible_values(service_names)),
         )

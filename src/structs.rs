@@ -1,13 +1,14 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ComposeService {
-    name: String,
-    image: String,
-    ports: Vec<Port>,
-    environment: Vec<Environment>,
-    volumes: Vec<Volume>,
-    networks: Vec<String>,
-    depends_on: Vec<String>,
-    restart: Option<RestartPolicy>,
-    healthcheck: Option<Healthcheck>,
-    command: Option<Vec<String>>,
+    pub name: String,
+    pub image: String,
+    pub ports: Vec<String>,
+    pub environment: Vec<String>,
+    pub volumes: Vec<String>,
+    pub networks: Vec<String>,
+    pub depends_on: Vec<String>,
+    pub restart: Option<String>,
+    pub command: Option<Vec<String>>,
 }
-// struct to appending data in docker-compose file

@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+mod cli;
+pub mod structs;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Post {
@@ -33,7 +35,7 @@ fn save_to_file(path: &PathBuf, content: &str) -> Result<(), std::io::Error> {
 
 #[tokio::main]
 async fn main(){
-    let matches = build_cli().get_matches();
+    let matches = cli::build_cli().get_matches();
 
     if let Some(sub_matches) = matches.subcommand_matches("get") {
         let post_id = *sub_matches
