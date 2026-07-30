@@ -7,7 +7,7 @@ async fn main(){
     let matches = cli::build_cli().get_matches();
     if let Some(sub_matches) = matches.subcommand_matches("add") {
         let add_service = *sub_matches
-            .get_one::<String>("service")
+            .get_one::<str>("service")
             .expect("add service");
         let port = sub_matches
             .get_flag("port");
@@ -17,7 +17,7 @@ async fn main(){
 
         println!("finding service");
 
-        match api::get_service("/localhost:3000", &add_service).await {
+        match api::get_service(&add_service).await {
             Ok(recipe) => {
                 let ports = if port {
 
