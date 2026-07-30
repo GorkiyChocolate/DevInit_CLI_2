@@ -1,5 +1,4 @@
-use crate::structs;
-use clap::{value_parser, Arg, Command};
+use clap::{Arg, Command};
 
 //cli builder funciton
 pub fn build_cli() -> Command {
@@ -8,12 +7,11 @@ pub fn build_cli() -> Command {
         .author("Gorkiy")
         .about("Devinit")
         .arg_required_else_help(true)
-        .subcommand(build_add_cli(&[]))
+        .subcommand(build_add_cli())
 }
 
 //add comand logic
-fn build_add_cli(service: &[structs::ComposeService]) -> Command {
-    let service_names: Vec<String> = service.iter().map(|s| s.name.clone()).collect();
+fn build_add_cli() -> Command {
     let help_text = String::from("helps");
     Command::new("add")
         .about("Adding dependency")
@@ -22,17 +20,18 @@ fn build_add_cli(service: &[structs::ComposeService]) -> Command {
                 .help(help_text)
                 .required(true)
                 .index(1)
-                .value_parser(builder_possible_values(service_names)),
         )
         .arg(
             Arg::new("port")
                 .short('p')
                 .long("port")
                 .help("default Port")
-                .value_parser(value_parser![u16]),
+        )
+        .arg(
+            Arg::new("version")
+            .short('v')
+            .long("version")
+            .help("specific version of service")
         )
 }
 
-fn builder_possible_values(values: Vec<String>) -> clap::builder::PossibleValuesParser {
-    clap::builder::PossibleValuesParser::new(values)
-}
