@@ -1,4 +1,4 @@
-use std::fs::OpenOptions;
+use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -15,7 +15,7 @@ pub fn append_data(text: &str, path:&PathBuf, target_name: &str) -> std::io::Res
         }
     }
 
-    let mut docker_compose = OpenOptions::new()
+    let mut docker_compose = fs::OpenOptions::new()
         .create(true) //create if doesnt exist
         .append(true) //not overwrite file
         .open(&path)?;

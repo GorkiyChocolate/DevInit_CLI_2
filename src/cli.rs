@@ -10,7 +10,7 @@ pub async fn cli_logic() {
 
         let port = sub_matches.get_flag("port");
 
-        let version = sub_matches.get_flag;
+        let version = sub_matches.get_flag("version");
 
         println!("Finding service");
 

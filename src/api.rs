@@ -1,15 +1,31 @@
-use crate::structs;
+use super::structs;
+use reqwest::blocking::Client;
+use std::error::Error;
 
-pub async fn add_service(service_name: &str) -> Result<structs::Recipe, reqwest::Error> {
-    let url = format!("http://localhost:3000:{}", service_name);
-    let response = reqwest::get(url).await?.error_for_status()?;
-    let recipe = response.json::<structs::Recipe>().await?;
-    Ok(recipe)
-}
+pub async fn execute_request(
+    client: &Client, // 1. Клиент передается по ссылке
+    method: &str,
+    url: &str,
+    body: Option<&str>,
+) -> Result<structs::Recipe, Box<dyn Error>> {
+    let mut request_builder = match method.to_uppercase().as_str() {
+        "GET" => client.get(url),
+        "POST" => client.post(url),
+        "PUT" => client.put(url),
+        "DELETE" => client.delete(url),
+        _ => return Err(format!("Unsupported HTTP method: {method}").into()),
+    };
 
-pub async fn get_service(repo_name: &str) -> Result<structs::Recipe, reqwest::Error> {
-    let url = format!("http://localhost:3000:{}", repo_name);
-    let response = reqwest::get(url).await?.error_for_status()?;
-    let recipe = response.json::<structs::Recipe>().await?;
+    if let Some(b) = body {
+        // 2. Указываем Content-Type, если передаем тело
+        request_builder = request_builder
+            .header("Content-Type", "application/json")
+            .body(b.to_owned());
+    }
+
+    // 3. Отправляем запрос, проверяем статус и парсим JSON
+    let response = request_builder.send()?.error_for_status()?;
+    let recipe: structs::Recipe = response.json()?;
+
     Ok(recipe)
 }
