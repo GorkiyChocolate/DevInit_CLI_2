@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Recipe {
+// Добавлен Clone, чтобы структуру можно было копировать внутри append_data
+#[derive(Debug, Serialize, Deserialize, Clone)] 
+pub struct RecipeCompose {
     pub name: String,
     pub description: Option<String>,
 
-    // Docker Compose
+    // Docker Compose поля
     pub image: String,
     pub ports: Option<Vec<String>>,
     pub environment: Option<Vec<String>>,
@@ -14,21 +15,6 @@ pub struct Recipe {
     pub depends_on: Option<Vec<String>>,
     pub restart: Option<String>,
     pub command: Option<Vec<String>>,
-
-    // extra files
-    pub files: Option<Vec<File>>,
-
-    // .env
-    pub env: Option<Vec<String>>,
-
-    //
-    pub notes: Option<Vec<String>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct File {
-    pub path: String,
-    pub content: String,
 }
 
 /*

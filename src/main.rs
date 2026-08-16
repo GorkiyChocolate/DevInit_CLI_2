@@ -1,6 +1,6 @@
 mod api;
 mod structs;
-mod append_data;
+mod yaml_config;
 mod cli;
 mod commands;
 
@@ -12,6 +12,6 @@ async fn main(){
     let body = Some("{\"key\": \"value\"}");
 
     cli::cli_logic().await;
-    api::execute_request(client, method, url, body).await;
-    append_data::append_data()
+    api::get_recipe("localhost:3000", "redis" ).await;
+    yaml_config::append_data();
 }   
