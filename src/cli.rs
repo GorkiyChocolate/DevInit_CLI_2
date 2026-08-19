@@ -16,7 +16,7 @@ pub async fn cli_logic() {
                 Ok(recipe) => {
                     println!("Successfully retrieved recipe: {:?}", recipe);
                     let target_path = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-                    append_data(&recipe, &target_path);
+                    let _ = append_data(&recipe, &target_path);
                 },
                 Err(e) => eprintln!("Error fetching recipe: {}", e),
             }
