@@ -1,4 +1,6 @@
-use crate::{api, commands};
+use std::{env, path::PathBuf};
+
+use crate::{api, commands, yaml_config::append_data};
 
 pub async fn cli_logic() {
     let matches = commands::build_cli().get_matches();
@@ -10,8 +12,12 @@ pub async fn cli_logic() {
                 .expect("Required argument");
 
             println!("Sending request for recipe: {}", recipe_name);
-            match api::get_recipe(recipe_name, "http://localhost:3000/").await {
-                Ok(recipe) => println!("Successfully retrieved recipe: {:?}", recipe),
+            match api::get_recipe(recipe_name, "http://127.0.0.1:3000/services/").await {
+                Ok(recipe) => {
+                    println!("Successfully retrieved recipe: {:?}", recipe);
+                    let target_path = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+                    append_data(&recipe, &target_path);
+                },
                 Err(e) => eprintln!("Error fetching recipe: {}", e),
             }
         }
@@ -30,6 +36,8 @@ pub async fn cli_logic() {
                 .expect("Required argument");
             println!("Getting repository from: {}", url);
         }
-        _ => unreachable!(),
+        _ => {
+                println!("No subcommand provided. Use --help for usage instructions.");
+            }
     }
 }

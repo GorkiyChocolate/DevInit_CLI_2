@@ -9,6 +9,7 @@ pub fn build_cli() -> Command {
         .subcommand(build_add_cli())
         .subcommand(build_list_cli())
         .subcommand(build_get_cli())
+        .subcommand(build_license_cli())
 }
 
 fn build_add_cli() -> Command {
@@ -58,6 +59,17 @@ fn build_get_cli() -> Command {
         .arg(
             Arg::new("service_url")
                 .help("Get service from repo")
+                .required(true)
+                .index(1),
+        )
+}
+
+fn build_license_cli() -> Command {
+    Command::new("license")
+        .about("Lincensing project")
+        .arg(
+            Arg::new("license_type")
+                .help("license type")
                 .required(true)
                 .index(1),
         )
