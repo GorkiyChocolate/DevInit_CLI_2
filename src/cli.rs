@@ -15,8 +15,13 @@ pub async fn cli_logic() {
             match api::get_recipe(recipe_name, "http://127.0.0.1:3000/services/").await {
                 Ok(recipe) => {
                     println!("Successfully retrieved recipe: {:?}", recipe);
-                    let target_path = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-                    let _ = append_data(&recipe, &target_path);
+                    let target_path = env::current_dir()
+                        .unwrap_or_else(|_| PathBuf::from("."))
+                        .join("compose.yaml");
+
+                    if let Err(e) = append_data(&recipe, &target_path) {
+                        eprintln!("Error updating {}: {}", target_path.display(), e);
+                    }
                 },
                 Err(e) => eprintln!("Error fetching recipe: {}", e),
             }
