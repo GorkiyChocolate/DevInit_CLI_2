@@ -3,39 +3,67 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
-use crate::structs::RecipeCompose;
+use crate::structs::{ConfigsList, RecipeCompose};
 
-pub fn append_data(config_struct: &RecipeCompose, path: &PathBuf) -> std::io::Result<()> {
-    let file_path = path;
+pub fn yaml_data(config_struct: &RecipeCompose, path: &PathBuf) -> std::io::Result<()> {
+    append_recipes(std::slice::from_ref(config_struct), path)
+}
 
-    let mut recipes_map: HashMap<String, RecipeCompose> = HashMap::new();
+pub fn yaml_configs_data(configs_list: &ConfigsList, path: &PathBuf) -> std::io::Result<()> {
+    append_recipes(&configs_list.configs, path)
+}
 
-    if file_path.exists() {
-        let mut file = File::open(file_path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
+fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<()> {
+    let existing_names = read_existing_names(path)?;
+    let mut names_to_add = HashMap::new();
 
-        if !contents.trim().is_empty() {
-            recipes_map = serde_yaml::from_str(&contents)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    for recipe in recipes {
+        if existing_names.contains_key(&recipe.name) || names_to_add.contains_key(&recipe.name) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                format!("Config '{}' already exists in YAML file", recipe.name),
+            ));
         }
+        names_to_add.insert(recipe.name.clone(), ());
     }
 
-    println!("Было сервисов в файле: {:?}", recipes_map.keys().collect::<Vec<_>>());
-
-    recipes_map.insert(config_struct.name.clone(), config_struct.clone());
+    if recipes.is_empty() {
+        return Ok(());
+    }
 
     let mut file = OpenOptions::new()
         .create(true)
-        .write(true)
-        .truncate(true)
-        .open(file_path)?;
+        .append(true)
+        .open(path)?;
 
-    let updated_yaml = serde_yaml::to_string(&recipes_map)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-        
-    file.write_all(updated_yaml.as_bytes())?;
+    if path.metadata()?.len() > 0 {
+        file.write_all(b"\n")?;
+    }
 
-    println!("Сервис '{}' успешно добавлен/обновлен в конфигурации.", config_struct.name);
+    for recipe in recipes {
+        let mut recipe_map = HashMap::new();
+        recipe_map.insert(&recipe.name, recipe);
+        let yaml = serde_yaml::to_string(&recipe_map)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        file.write_all(yaml.as_bytes())?;
+    }
+
     Ok(())
+}
+
+fn read_existing_names(path: &PathBuf) -> std::io::Result<HashMap<String, RecipeCompose>> {
+    if !path.exists() {
+        return Ok(HashMap::new());
+    }
+
+    let mut file = File::open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    if contents.trim().is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    serde_yaml::from_str(&contents)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
