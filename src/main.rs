@@ -1,10 +1,10 @@
 mod api;
 mod cli;
-mod commands;
-mod structs;
-mod yaml_config;
+mod file_config;
+mod models;
+use cli::cli_logic;
 
 #[tokio::main]
 async fn main() {
-    cli::cli_logic().await;
+    cli_logic::cli_logic().await;
 }

@@ -1,6 +1,10 @@
 use std::{env, path::PathBuf};
+use crate::{api, cli, file_config};
 
-use crate::{api, commands, yaml_config::{yaml_configs_data, yaml_data}};
+use cli::commands;
+use file_config::yaml_config::{yaml_data,yaml_configs_data};
+use api::add_recipe::add_recipe;
+use api::get_config::get_config;
 
 
 pub async fn cli_logic() {
@@ -16,7 +20,7 @@ pub async fn cli_logic() {
                 .expect("Required argument");
 
             println!("Sending request for recipe: {}", recipe_name);
-            match api::add_recipe(recipe_name, base_url ).await {
+            match add_recipe(recipe_name, base_url ).await {
                 Ok(recipe) => {
                     println!("Successfully retrieved recipe: {:?}", recipe);
                     let target_path = env::current_dir()
@@ -47,7 +51,7 @@ pub async fn cli_logic() {
                 .expect("Required argument");
             println!("Getting repository from: {}", configs_url);
 
-            match api::get_config(configs_url, config_name).await{
+            match get_config(configs_url, config_name).await{
                 Ok(configs_list) => {
                     println!("Succesfully retrieved configs: {:?}", configs_list);
                     let target_path = env::current_dir()

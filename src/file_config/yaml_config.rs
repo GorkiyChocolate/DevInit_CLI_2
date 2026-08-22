@@ -3,7 +3,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
-use crate::structs::{ConfigsList, RecipeCompose};
+use crate::models::structs::{ConfigsList, RecipeCompose};
 
 pub fn yaml_data(config_struct: &RecipeCompose, path: &PathBuf) -> std::io::Result<()> {
     append_recipes(std::slice::from_ref(config_struct), path)
