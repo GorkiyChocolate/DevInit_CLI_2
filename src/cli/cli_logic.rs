@@ -1,11 +1,10 @@
-use std::{env, path::PathBuf};
 use crate::{api, cli, file_config};
+use std::{env, path::PathBuf};
 
-use cli::commands;
-use file_config::yaml_config::{yaml_data,yaml_configs_data};
 use api::add_recipe::add_recipe;
 use api::get_config::get_config;
-
+use cli::commands;
+use file_config::yaml_config::{yaml_configs_data, yaml_data};
 
 pub async fn cli_logic() {
     let base_url = "http://127.0.0.1:3000/services/";
@@ -13,14 +12,13 @@ pub async fn cli_logic() {
     let matches = commands::build_cli().get_matches();
 
     match matches.subcommand() {
-
         Some(("add", sub_matches)) => {
             let recipe_name = sub_matches
                 .get_one::<String>("service")
                 .expect("Required argument");
 
             println!("Sending request for recipe: {}", recipe_name);
-            match add_recipe(recipe_name, base_url ).await {
+            match add_recipe(recipe_name, base_url).await {
                 Ok(recipe) => {
                     println!("Successfully retrieved recipe: {:?}", recipe);
                     let target_path = env::current_dir()
@@ -30,7 +28,7 @@ pub async fn cli_logic() {
                     if let Err(e) = yaml_data(&recipe, &target_path) {
                         eprintln!("Error updating {}: {}", target_path.display(), e);
                     }
-                },
+                }
                 Err(e) => eprintln!("Error fetching recipe: {}", e),
             }
         }
@@ -51,7 +49,7 @@ pub async fn cli_logic() {
                 .expect("Required argument");
             println!("Getting repository from: {}", configs_url);
 
-            match get_config(configs_url, config_name).await{
+            match get_config(configs_url, config_name).await {
                 Ok(configs_list) => {
                     println!("Succesfully retrieved configs: {:?}", configs_list);
                     let target_path = env::current_dir()
@@ -66,8 +64,7 @@ pub async fn cli_logic() {
             }
         }
         _ => {
-                println!("No subcommand provided. Use --help for usage instructions.");
-            }
-            
+            println!("No subcommand provided. Use --help for usage instructions.");
+        }
     }
 }

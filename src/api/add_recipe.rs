@@ -1,10 +1,9 @@
-use reqwest::Client;
-
 use crate::models::structs::RecipeCompose;
+use reqwest::Client;
 
 pub async fn add_recipe(
     recipe_name: &str,
-    base_url: &str
+    base_url: &str,
 ) -> Result<RecipeCompose, Box<dyn std::error::Error>> {
     let url = format!("{}{}", base_url, recipe_name);
 

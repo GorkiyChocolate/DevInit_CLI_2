@@ -1,6 +1,5 @@
-use reqwest::Client;
-
 use crate::models::structs::ConfigsList;
+use reqwest::Client;
 
 pub async fn get_config(
     config_url: &str,
@@ -13,7 +12,7 @@ pub async fn get_config(
         .header("Accept", "application/json")
         .send()
         .await?
-        .error_for_status()? // Превращает HTTP 4xx/5xx в Err(reqwest::Error)
+        .error_for_status()?
         .json::<ConfigsList>()
         .await?;
 

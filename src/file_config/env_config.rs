@@ -1,3 +1,3 @@
-pub fn env_file_config() {
-    
+pub mod envfile {
+    pub fn env_file_config() {}
 }

@@ -65,12 +65,10 @@ fn build_get_cli() -> Command {
 }
 
 fn build_license_cli() -> Command {
-    Command::new("license")
-        .about("Lincensing project")
-        .arg(
-            Arg::new("license_type")
-                .help("license type")
-                .required(true)
-                .index(1),
-        )
+    Command::new("license").about("Lincensing project").arg(
+        Arg::new("license_type")
+            .help("license type")
+            .required(true)
+            .index(1),
+    )
 }

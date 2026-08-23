@@ -1,9 +1,8 @@
+use crate::models::structs::{ConfigsList, RecipeCompose};
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::PathBuf;
-
-use crate::models::structs::{ConfigsList, RecipeCompose};
 
 pub fn yaml_data(config_struct: &RecipeCompose, path: &PathBuf) -> std::io::Result<()> {
     append_recipes(std::slice::from_ref(config_struct), path)
@@ -31,10 +30,7 @@ fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<
         return Ok(());
     }
 
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)?;
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
     if path.metadata()?.len() > 0 {
         file.write_all(b"\n")?;
