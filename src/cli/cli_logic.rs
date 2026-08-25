@@ -4,6 +4,7 @@ use std::{env, path::PathBuf};
 use api::add_recipe::add_recipe;
 use api::get_config::get_config;
 use cli::commands;
+use file_config::env_config::env_file_config;
 use file_config::yaml_config::{yaml_configs_data, yaml_data};
 
 pub async fn cli_logic() {
@@ -24,9 +25,15 @@ pub async fn cli_logic() {
                     let target_path = env::current_dir()
                         .unwrap_or_else(|_| PathBuf::from("."))
                         .join("compose.yaml.example");
+                    let env_path = env::current_dir()
+                        .unwrap_or_else(|_| PathBuf::from("."))
+                        .join("env.example");
 
                     if let Err(e) = yaml_data(&recipe, &target_path) {
                         eprintln!("Error updating {}: {}", target_path.display(), e);
+                    }
+                    if let Err(e) = env_file_config(&recipe, &env_path) {
+                        eprintln!("Error updating {}: {}", env_path.display(), e);
                     }
                 }
                 Err(e) => eprintln!("Error fetching recipe: {}", e),

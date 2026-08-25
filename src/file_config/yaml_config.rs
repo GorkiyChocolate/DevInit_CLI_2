@@ -1,5 +1,5 @@
 use crate::models::structs::{ConfigsList, RecipeCompose};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -13,17 +13,16 @@ pub fn yaml_configs_data(configs_list: &ConfigsList, path: &PathBuf) -> std::io:
 }
 
 fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<()> {
-    let existing_names = read_existing_names(path)?;
-    let mut names_to_add = HashMap::new();
+    let existing_images = read_existing_images(path)?;
+    let mut images_to_add = HashSet::new();
 
     for recipe in recipes {
-        if existing_names.contains_key(&recipe.name) || names_to_add.contains_key(&recipe.name) {
+        if existing_images.contains(&recipe.image) || !images_to_add.insert(recipe.image.clone()) {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::AlreadyExists,
-                format!("Config '{}' already exists in YAML file", recipe.name),
+                format!("Image '{}' already exists in YAML file", recipe.image),
             ));
         }
-        names_to_add.insert(recipe.name.clone(), ());
     }
 
     if recipes.is_empty() {
@@ -38,7 +37,9 @@ fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<
 
     for recipe in recipes {
         let mut recipe_map = HashMap::new();
-        recipe_map.insert(&recipe.name, recipe);
+        let mut compose_recipe = recipe.clone();
+        compose_recipe.env = None;
+        recipe_map.insert(&recipe.name, &compose_recipe);
         let yaml = serde_yaml::to_string(&recipe_map)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         file.write_all(yaml.as_bytes())?;
@@ -47,9 +48,9 @@ fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<
     Ok(())
 }
 
-fn read_existing_names(path: &PathBuf) -> std::io::Result<HashMap<String, RecipeCompose>> {
+fn read_existing_images(path: &PathBuf) -> std::io::Result<HashSet<String>> {
     if !path.exists() {
-        return Ok(HashMap::new());
+        return Ok(HashSet::new());
     }
 
     let mut file = File::open(path)?;
@@ -57,9 +58,11 @@ fn read_existing_names(path: &PathBuf) -> std::io::Result<HashMap<String, Recipe
     file.read_to_string(&mut contents)?;
 
     if contents.trim().is_empty() {
-        return Ok(HashMap::new());
+        return Ok(HashSet::new());
     }
 
-    serde_yaml::from_str(&contents)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    let recipes: HashMap<String, RecipeCompose> = serde_yaml::from_str(&contents)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+
+    Ok(recipes.into_values().map(|recipe| recipe.image).collect())
 }
