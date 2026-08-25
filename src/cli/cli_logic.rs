@@ -70,6 +70,14 @@ pub async fn cli_logic() {
                 Err(e) => eprintln!("Error fetching config: {}", e),
             }
         }
+
+        Some(("login", sub_matches)) => {
+            let config_name = sub_matches
+                .get_one::<String>("login_url")
+                .expect("Required argument");
+            println!("logging in: {}", configs_url);
+
+        }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");
         }
