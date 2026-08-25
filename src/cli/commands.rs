@@ -11,6 +11,7 @@ pub fn build_cli() -> Command {
         .subcommand(build_get_cli())
         .subcommand(build_license_cli())
         .subcommand(build_login_cli())
+        .subcommand(build_compile_cli())
 }
 
 fn build_add_cli() -> Command {
@@ -79,6 +80,16 @@ fn build_login_cli() -> Command {
         .arg(
             Arg::new("login_url")
                 .help("login via url")
+                .required(true)
+                .index(1),
+        )
+}
+
+fn build_compile_cli() -> Command {
+    Command::new("compile").about("compiling")
+        .arg(
+            Arg::new("file_compile")
+                .help("compiling file configuration")
                 .required(true)
                 .index(1),
         )

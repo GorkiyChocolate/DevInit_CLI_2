@@ -14,4 +14,11 @@ pub mod models {
     pub mod structs;
 }
 
+pub mod ast_yml{
+    pub mod ast_structs;
+    pub mod ast_validation;
+    pub mod ast;
+    pub mod ast_semantic;
+}
+
 pub use cli::cli_logic::cli_logic;
