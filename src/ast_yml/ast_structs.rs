@@ -1,20 +1,23 @@
 use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
+/// Корневое промежуточное представление (IR)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub struct CompileSpec {
     pub project: ProjectMeta,
     #[serde(default)]
-    pub variables: Vec<VariableDeclaration>,
+    pub variables: BTreeMap<String, VariableDeclaration>,
     #[serde(default)]
-    pub networks: Vec<NetworkSpec>,
+    pub networks: BTreeMap<String, NetworkSpec>,
     #[serde(default)]
-    pub volumes: Vec<VolumeSpec>,
+    pub volumes: BTreeMap<String, VolumeSpec>,
     #[serde(default)]
-    pub services: Vec<ServiceSpec>,
+    pub services: BTreeMap<String, ServiceSpec>,
     #[serde(default)]
-    pub environments: Vec<EnvironmentSpec>,
+    pub pipeline: Option<PipelineSpec>,
+    #[serde(default)]
+    pub environments: BTreeMap<String, EnvironmentSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -23,17 +26,19 @@ pub struct ProjectMeta {
     pub name: String,
     pub version: String,
     pub description: Option<String>,
+    #[serde(default)]
+    pub authors: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub struct VariableDeclaration {
-    pub name: String,
     #[serde(rename = "type")]
     pub var_type: VariableType,
     #[serde(default)]
     pub required: bool,
     pub default: Option<serde_yaml::Value>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -48,25 +53,26 @@ pub enum VariableType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub struct NetworkSpec {
-    pub name: String,
     #[serde(rename = "type")]
     pub network_type: NetworkType,
+    #[serde(default)]
+    pub internal: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum NetworkType {
-    Public,
-    Private,
+    Bridge,
     Overlay,
+    Host,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub struct VolumeSpec {
-    pub name: String,
     #[serde(rename = "type")]
     pub volume_type: VolumeType,
+    pub size: Option<String>, // "10Gi", "512Mi" (для K8s PVC / Cloud Storage)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -80,9 +86,8 @@ pub enum VolumeType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub struct ServiceSpec {
-    pub name: String,
     #[serde(rename = "type")]
-    pub service_type: String,
+    pub service_type: ServiceRole,
     pub version: Option<String>,
     pub runtime: Option<RuntimeSpec>,
     pub image: Option<ImageSpec>,
@@ -90,16 +95,29 @@ pub struct ServiceSpec {
     #[serde(default)]
     pub ports: Vec<PortSpec>,
     #[serde(default)]
-    pub environment: Vec<EnvironmentVariableAssignment>,
+    pub environment: BTreeMap<String, EnvVarValue>,
     #[serde(default)]
     pub storage: Vec<StorageMount>,
     #[serde(default)]
-    pub depends_on: Vec<DependencySpec>,
+    pub routing: Option<RoutingSpec>,
+    #[serde(default)]
+    pub depends_on: BTreeMap<String, DependencyCondition>,
     #[serde(default)]
     pub networks: Vec<String>,
     pub healthcheck: Option<HealthcheckSpec>,
     pub resources: Option<ResourceLimitsSpec>,
     pub replicas: Option<ReplicasSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ServiceRole {
+    Web,
+    Api,
+    Worker,
+    Database,
+    Cache,
+    Broker,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -120,7 +138,15 @@ pub struct ImageSpec {
 #[serde(rename_all = "snake_case")]
 pub struct BuildSpec {
     pub context: String,
+    #[serde(default = "default_dockerfile")]
     pub dockerfile: String,
+    pub target: Option<String>,
+    #[serde(default)]
+    pub args: BTreeMap<String, String>,
+}
+
+fn default_dockerfile() -> String {
+    "Dockerfile".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -136,17 +162,35 @@ fn default_protocol() -> String {
     "tcp".to_string()
 }
 
+/// Сетевая маршрутизация (Ingress / Reverse Proxy / Load Balancer)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub struct EnvironmentVariableAssignment {
-    pub name: String,
-    pub value: EnvVarValue,
+pub struct RoutingSpec {
+    pub host: Option<String>,
+    #[serde(default)]
+    pub paths: Vec<PathRoute>,
+    #[serde(default)]
+    pub tls: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct PathRoute {
+    pub path: String,
+    pub target_port: u16,
+    #[serde(default = "default_strip_prefix")]
+    pub strip_prefix: bool,
+}
+
+fn default_strip_prefix() -> bool {
+    false
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum EnvVarValue {
     Ref(VariableRef),
+    SecretRef(SecretRef),
     Literal(serde_yaml::Value),
 }
 
@@ -158,21 +202,26 @@ pub struct VariableRef {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub struct StorageMount {
-    pub volume: String,
-    pub mount: String,
+pub struct SecretRef {
+    pub secret: String,
+    pub key: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub struct DependencySpec {
-    pub service: String,
-    #[serde(default = "default_condition")]
-    pub condition: String, // "ready", "started", "healthy"
+pub struct StorageMount {
+    pub volume: String,
+    pub mount: String,
+    #[serde(default)]
+    pub read_only: bool,
 }
 
-fn default_condition() -> String {
-    "started".to_string()
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum DependencyCondition {
+    Started,
+    Healthy,
+    CompletedSuccessfully,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -206,21 +255,40 @@ pub struct ReplicasSpec {
     pub max: u32,
 }
 
+/// Метаданные CI/CD пайплайнов (генерация GitHub Actions, GitLab CI)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub struct EnvironmentSpec {
-    pub name: String,
+pub struct PipelineSpec {
     #[serde(default)]
-    pub variables: Vec<EnvironmentVariableOverride>,
-    #[serde(default)]
-    pub services: BTreeMap<String, ServiceOverrideSpec>,
+    pub stages: Vec<PipelineStage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub struct EnvironmentVariableOverride {
+pub struct PipelineStage {
     pub name: String,
-    pub value: serde_yaml::Value,
+    #[serde(default)]
+    pub steps: Vec<PipelineStep>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct PipelineStep {
+    pub name: String,
+    pub command: Option<String>,
+    pub run_in_service: Option<String>,
+    #[serde(default)]
+    pub env: BTreeMap<String, String>,
+}
+
+/// Спецификация окружений (dev, staging, prod)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct EnvironmentSpec {
+    #[serde(default)]
+    pub variables: BTreeMap<String, serde_yaml::Value>,
+    #[serde(default)]
+    pub services: BTreeMap<String, ServiceOverrideSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -228,4 +296,6 @@ pub struct EnvironmentVariableOverride {
 pub struct ServiceOverrideSpec {
     pub replicas: Option<ReplicasSpec>,
     pub resources: Option<ResourceLimitsSpec>,
+    #[serde(default)]
+    pub environment: BTreeMap<String, serde_yaml::Value>,
 }
