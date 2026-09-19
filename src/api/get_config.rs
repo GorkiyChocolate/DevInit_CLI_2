@@ -1,4 +1,4 @@
-use crate::models::structs::ConfigsList;
+use crate::models::docker_compose_struct::ConfigsList;
 use reqwest::Client;
 
 pub async fn get_config(

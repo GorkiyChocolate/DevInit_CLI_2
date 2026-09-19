@@ -1,4 +1,5 @@
 use crate::{api, cli, file_config};
+use std::path::Path;
 use std::{env, path::PathBuf};
 
 use api::add_recipe::add_recipe;
@@ -77,6 +78,22 @@ pub async fn cli_logic() {
                 .expect("Required argument");
             println!("logging in: {}", configs_url);
 
+        }
+
+
+        Some(("compile", sub_matches)) => {
+            let path  = PathBuf::new();
+            let compiler = sub_matches
+                .get_one::<String>("compiler")
+                .expect("con`t find compile.yaml");
+            println!("compiling compile.yaml");
+            /*match try_compile() {
+                
+                Ok() => {
+                    todo!("compile.yaml func handler")
+                }
+                Err(e) => eprintln!("cant compile compile.yaml")
+            }*/
         }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");

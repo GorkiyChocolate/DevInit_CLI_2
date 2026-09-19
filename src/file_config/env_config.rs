@@ -1,4 +1,4 @@
-use crate::models::structs::RecipeCompose;
+use crate::models::docker_compose_struct::RecipeCompose;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
