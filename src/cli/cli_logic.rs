@@ -1,5 +1,4 @@
 use crate::{api, cli, file_config};
-use std::path::Path;
 use std::{env, path::PathBuf};
 
 use api::add_recipe::add_recipe;

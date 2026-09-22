@@ -15,5 +15,8 @@ pub mod models {
     pub mod k8s_struct;
 }
 
+pub mod validator{
+    pub mod k8s_validator;
+}
 
 pub use cli::cli_logic::cli_logic;
