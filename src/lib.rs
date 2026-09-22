@@ -11,7 +11,12 @@ pub mod file_config {
     pub mod yaml_config;
 }
 pub mod models {
-    pub mod structs;
+    pub mod docker_compose_struct;
+    pub mod k8s_struct;
+}
+
+pub mod validator{
+    pub mod k8s_validator;
 }
 
 pub use cli::cli_logic::cli_logic;

@@ -1,26 +1,65 @@
-$ devinit add redis ->
-get request to web service
-{ "redis"{ "version": latest } }
-latest is if didnt input version;
+# Devinit 
+CLI Tool which help reduce time to configuration to deployment.
 
-$ devinit add redis -v 1.0 
-{ "redis" { "version": "1.0" } }
+## Exporting configs feature
+First of all, it will generate docker-compose.yaml and env files from 
+the web service through exporting configs.
 
-if web service recognise correctly it will
-return necessary data with struct Recipe
+## Compile feature
+Secondly, devinit will have feature for "compiling" specific file to generate configuration. For example, K8s and Terraform files
+
+Alghoritms of compiling.
+1) Read file
+2) Parse from yaml to struct
+3) Validate the values from struct
+    1)  Resolve model
+4) Generating config
+5) Writing to files
+
+### Reading file
+
+Devinit will find the file compile.yaml and read as a String
 
 
-after choosing version user should apply
-and enter Yes or No
+### Parse
 
-after that cli send get request
+Parsing will parse the compile.yaml via serde_yaml crate to structure.
+ And will have basic validation which included in parse structs
+
+### Validating
+
+Validate feature will check and validates the fields.
+It will check for necessarily fields and existing of dependencies
+and for ports configuration, correctly specified dockerfile
+ for application and are the specified targets supported?
+
+### Resolving 
+
+Will be added later
+
+### Generating
+
+generating files and directories
+
+### Writing
+
+Writing in generated files.
 
 
-at the end devinit will support github like
-function
-it will import all requirements from repo like space.
+## Loging feature
 
-example:
-$devinit get https://devinit.com/gorkyi-chocolate/rust-backend-cli
+With login feature user could authorize in web services (main or private). User could get private configurations from web seriveces.
 
-and export all requirements 
+## Importing feature
+
+User could import encrypted configurations from web services to secure secret data
+
+## List feature
+
+In the future. List feature could show list of default services , as example famous services like PostgreSQL, Redis et al. and give oportunity to choose version of service.
+
+
+## Install feature
+
+User could install services from web services to install specific configuration
+

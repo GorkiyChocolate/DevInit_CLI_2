@@ -70,6 +70,30 @@ pub async fn cli_logic() {
                 Err(e) => eprintln!("Error fetching config: {}", e),
             }
         }
+
+        Some(("login", sub_matches)) => {
+            let config_name = sub_matches
+                .get_one::<String>("login_url")
+                .expect("Required argument");
+            println!("logging in: {}", configs_url);
+
+        }
+
+
+        Some(("compile", sub_matches)) => {
+            let path  = PathBuf::new();
+            let compiler = sub_matches
+                .get_one::<String>("compiler")
+                .expect("con`t find compile.yaml");
+            println!("compiling compile.yaml");
+            /*match try_compile() {
+                
+                Ok() => {
+                    todo!("compile.yaml func handler")
+                }
+                Err(e) => eprintln!("cant compile compile.yaml")
+            }*/
+        }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");
         }

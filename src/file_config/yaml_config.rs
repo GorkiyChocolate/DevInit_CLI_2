@@ -1,4 +1,4 @@
-use crate::models::structs::{ConfigsList, RecipeCompose};
+use crate::models::docker_compose_struct::{ConfigsList, RecipeCompose};
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
