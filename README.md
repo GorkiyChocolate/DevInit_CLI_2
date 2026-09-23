@@ -6,7 +6,7 @@ First of all, it will generate docker-compose.yaml and env files from
 the web service through exporting configs.
 
 ## Compile feature
-Secondly, devinit will have feature for "compiling" specific file to generate configuration. For example, K8s and Terraform files
+Secondly, devinit will have feature for "compiling" specific file to generate configuration. For example, K8s and CI/CD configs
 
 Alghoritms of compiling.
 1) Read file
