@@ -80,13 +80,16 @@ pub async fn cli_logic() {
         }
 
 
-        Some(("compile", sub_matches)) => {
+        Some(("compile", _)) => {
             let path  = PathBuf::new();
-            let compiler = sub_matches
-                .get_one::<String>("compiler")
-                .expect("con`t find compile.yaml");
-            println!("compiling compile.yaml{compiler}, {:?}", path);
             
+            println!("compiling compile.yaml {:?}", path);
+            
+            
+        }
+
+        Some(("test", _)) => {
+            //test field
         }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");

@@ -1,6 +1,13 @@
 use std::{fs, path::PathBuf};
 
 
+pub trait CiCdGenerator{
+    fn files_existing(list_of_files: &str) -> bool;
+    fn file_text_existence(list_of_files: &str) -> bool;
+    fn file_generating() -> Result<(), std::io::Error>;
+}
+
+
 pub fn cicd_generator() -> Result<(), std::io::Error>{
     let mut dir_path = PathBuf::from(".github/workflow");
 

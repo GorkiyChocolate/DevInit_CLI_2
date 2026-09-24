@@ -1,6 +1,7 @@
 pub mod api {
     pub mod add_recipe;
     pub mod get_config;
+    pub mod login;
 }
 pub mod cli {
     pub mod cli_logic;

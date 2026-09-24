@@ -1,5 +1,10 @@
 use std::{fs::{self}, path::{PathBuf}};
 
+pub trait K8sGenerator{
+    fn files_existing(list_of_files: &str) -> bool;
+    fn file_text_existence(list_of_files: &str) -> bool;
+    fn file_generating() -> Result<(), std::io::Error>;
+}
 
 pub fn k8s_generator_files() -> Result<(), std::io::Error> {
     let mut dir_path = PathBuf::from("k8s");
