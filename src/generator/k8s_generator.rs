@@ -5,7 +5,7 @@ pub fn k8s_generator_files() -> Result<(), std::io::Error> {
     let mut dir_path = PathBuf::from("k8s");
     fs::create_dir_all(&dir_path)?;
 
-    let configmap = "config map.yaml";
+    let configmap = "configmap.yaml";
     let secret = "secret.yaml";
     let deployment = "deployment.yaml";
     let service = "service.yaml";

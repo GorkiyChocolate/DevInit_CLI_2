@@ -1,7 +1,8 @@
+use devinit_cli_2::generator::cicd_generator::cicd_generator;
 
 
-#[tokio::main]
-async fn main() {
-    devinit_cli_2::cli_logic().await;
+
+fn main() {
+    cicd_generator();
     println!("tods");
 }
