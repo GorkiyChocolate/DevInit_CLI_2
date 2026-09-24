@@ -75,7 +75,7 @@ pub async fn cli_logic() {
             let config_name = sub_matches
                 .get_one::<String>("login_url")
                 .expect("Required argument");
-            println!("logging in: {}", configs_url);
+            println!("logging in: {}, {:?}", configs_url, config_name);
 
         }
 
@@ -85,14 +85,8 @@ pub async fn cli_logic() {
             let compiler = sub_matches
                 .get_one::<String>("compiler")
                 .expect("con`t find compile.yaml");
-            println!("compiling compile.yaml");
-            /*match try_compile() {
-                
-                Ok() => {
-                    todo!("compile.yaml func handler")
-                }
-                Err(e) => eprintln!("cant compile compile.yaml")
-            }*/
+            println!("compiling compile.yaml{compiler}, {:?}", path);
+            
         }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");

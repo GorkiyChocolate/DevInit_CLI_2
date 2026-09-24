@@ -12,6 +12,7 @@ pub fn build_cli() -> Command {
         .subcommand(build_license_cli())
         .subcommand(build_login_cli())
         .subcommand(build_compile_cli())
+        .subcommand(build_test_cli())
 }
 
 fn build_add_cli() -> Command {
@@ -94,3 +95,12 @@ fn build_compile_cli() -> Command {
                 .index(1),
         )
 }
+
+fn build_test_cli() -> Command {
+    Command::new("test").about("testing")
+        .arg(
+            Arg::new("tester")
+                .help("test command")
+        )
+}
+
