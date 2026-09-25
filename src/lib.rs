@@ -19,6 +19,7 @@ pub mod models {
 
 pub mod validator{
     pub mod k8s_validator;
+    pub mod cicd_validator;
 }
 
 pub mod generator{
@@ -26,4 +27,10 @@ pub mod generator{
     pub mod cicd_generator;
 }
 
+pub mod storage{
+    pub mod services;
+    pub mod services_generator;
+}
+
+pub mod errors;
 pub use cli::cli_logic::cli_logic;

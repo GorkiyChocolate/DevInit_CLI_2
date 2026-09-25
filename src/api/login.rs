@@ -2,10 +2,9 @@ use reqwest::Client;
 
 pub async fn login(company_url: &str) 
     -> Result<bool, Box<dyn std::error::Error>> {
-        let url = format!("{}",company_url);
 
         let logining = Client::new()
-            .post(&url)
+            .post(company_url)
             .header("Accept", "application/json")
             .send()
             .await?

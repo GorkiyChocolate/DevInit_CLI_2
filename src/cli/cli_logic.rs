@@ -1,3 +1,4 @@
+use crate::generator::cicd_generator::cicd_generator;
 use crate::{api, cli, file_config};
 use std::{env, path::PathBuf};
 
@@ -89,7 +90,8 @@ pub async fn cli_logic() {
         }
 
         Some(("test", _)) => {
-            //test field
+            
+            cicd_generator();
         }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");

@@ -1,6 +1,12 @@
-/*use crate::{models::k8s_struct};
+use crate::models::k8s_struct::Deployment;
 
-pub fn k8s_validate(model: &k8s_struct::Deployment) -> bool{
-
+trait K8s_Validator {
+    fn validate(&self) -> bool;
 }
-*/
+
+impl K8s_Validator for Deployment {
+    fn validate(&self) -> bool {
+        // Implementation for validating the deployment
+        true
+    }
+}
