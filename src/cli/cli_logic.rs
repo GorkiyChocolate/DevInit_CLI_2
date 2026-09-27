@@ -1,4 +1,5 @@
 use crate::generator::cicd_generator::cicd_generator;
+use crate::generator::k8s_generator::k8s_generator_files;
 use crate::{api, cli, file_config};
 use std::{env, path::PathBuf};
 
@@ -80,18 +81,22 @@ pub async fn cli_logic() {
 
         }
 
-
         Some(("compile", _)) => {
-            let path  = PathBuf::new();
-            
+            let mut path  = PathBuf::new();
+            path.push("compile.yaml");
+            if path.exists() {
+                println!("compile.yaml already exists.");
+            } else {
+                println!("creating compile.yaml");
+            }
+
             println!("compiling compile.yaml {:?}", path);
-            
-            
         }
 
         Some(("test", _)) => {
             
             cicd_generator();
+            k8s_generator_files();
         }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");

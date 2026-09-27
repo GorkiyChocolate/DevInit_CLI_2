@@ -15,11 +15,15 @@ pub mod models {
     pub mod docker_compose_struct;
     pub mod k8s_struct;
     pub mod cicd_struct;
+    pub mod env_struct;
+    pub mod services_struct;
 }
 
 pub mod validator{
     pub mod k8s_validator;
     pub mod cicd_validator;
+    pub mod compile_validator;
+    pub mod services_validator;
 }
 
 pub mod generator{
@@ -27,10 +31,7 @@ pub mod generator{
     pub mod cicd_generator;
 }
 
-pub mod storage{
-    pub mod services;
-    pub mod services_generator;
-}
+
 
 pub mod errors;
 pub use cli::cli_logic::cli_logic;

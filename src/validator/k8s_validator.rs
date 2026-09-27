@@ -1,12 +1,7 @@
 use crate::models::k8s_struct::Deployment;
 
-trait K8s_Validator {
-    fn validate(&self) -> bool;
-}
-
-impl K8s_Validator for Deployment {
-    fn validate(&self) -> bool {
-        // Implementation for validating the deployment
-        true
-    }
+pub fn validate_deployment(deployment: &Deployment) -> Result<(), std::io::Error> {
+    // Implementation for validating the deployment
+    println!("deployment: {:?}", deployment);
+    Ok(())
 }
