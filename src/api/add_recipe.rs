@@ -1,8 +1,6 @@
 use crate::models::docker_compose_struct::RecipeCompose;
 use reqwest::Client;
 
-
-
 pub async fn add_recipe(
     recipe_name: &str,
     base_url: &str,

@@ -1,7 +1,187 @@
+use crate::errors::ValidationError;
 use crate::models::k8s_struct::Deployment;
 
-pub fn validate_deployment(deployment: &Deployment) -> Result<(), std::io::Error> {
-    // Implementation for validating the deployment
-    println!("deployment: {:?}", deployment);
-    Ok(())
+pub fn validate_deployment(deployment: &Deployment, errors: &mut Vec<ValidationError>) {
+    let base = "kubernetes";
+    validate_name(
+        &deployment.metadata.name,
+        &format!("{base}.metadata.name"),
+        errors,
+    );
+    if deployment.api_version.trim().is_empty() {
+        errors.push(ValidationError {
+            path: format!("{base}.apiVersion"),
+            message: "cannot be empty".to_string(),
+        });
+    }
+    if deployment.kind.trim().is_empty() {
+        errors.push(ValidationError {
+            path: format!("{base}.kind"),
+            message: "cannot be empty".to_string(),
+        });
+    }
+    if deployment.spec.replicas == Some(0) {
+        errors.push(ValidationError {
+            path: format!("{base}.spec.replicas"),
+            message: "must be greater than 0".to_string(),
+        });
+    }
+    let pod = &deployment.spec.template.spec;
+    if pod.containers.is_empty() {
+        errors.push(ValidationError {
+            path: format!("{base}.spec.template.spec.containers"),
+            message: "must contain at least one container".to_string(),
+        });
+    }
+    for (index, container) in pod.containers.iter().enumerate() {
+        let path = format!("{base}.spec.template.spec.containers[{index}]");
+        validate_name(&container.name, &format!("{path}.name"), errors);
+        if container.image.trim().is_empty() {
+            errors.push(ValidationError {
+                path: format!("{path}.image"),
+                message: "cannot be empty".to_string(),
+            });
+        }
+        if let Some(ports) = &container.ports {
+            for (port_index, port) in ports.iter().enumerate() {
+                if port.container_port == 0 {
+                    errors.push(ValidationError {
+                        path: format!("{path}.ports[{port_index}].containerPort"),
+                        message: "must be greater than 0".to_string(),
+                    });
+                }
+            }
+        }
+        if let Some(env) = &container.env {
+            for (env_index, variable) in env.iter().enumerate() {
+                if variable.name.trim().is_empty()
+                    || (variable.value.is_none() && variable.value_from.is_none())
+                {
+                    errors.push(ValidationError {
+                        path: format!("{path}.env[{env_index}]"),
+                        message: "must have a name and a value or valueFrom".to_string(),
+                    });
+                }
+                if variable.value.is_some() && variable.value_from.is_some() {
+                    errors.push(ValidationError {
+                        path: format!("{path}.env[{env_index}]"),
+                        message: "value and valueFrom are mutually exclusive".to_string(),
+                    });
+                }
+            }
+        }
+        if let Some(mounts) = &container.volume_mounts {
+            for (mount_index, mount) in mounts.iter().enumerate() {
+                if mount.name.trim().is_empty() || mount.mount_path.trim().is_empty() {
+                    errors.push(ValidationError {
+                        path: format!("{path}.volumeMounts[{mount_index}]"),
+                        message: "name and mountPath cannot be empty".to_string(),
+                    });
+                }
+            }
+        }
+    }
+    if let Some(volumes) = &pod.volumes {
+        for (index, volume) in volumes.iter().enumerate() {
+            let path = format!("{base}.spec.template.spec.volumes[{index}]");
+            validate_name(&volume.name, &format!("{path}.name"), errors);
+            let source_count = [
+                volume.empty_dir.is_some(),
+                volume.config_map.is_some(),
+                volume.secret.is_some(),
+                volume.persistent_volume_claim.is_some(),
+                volume.host_path.is_some(),
+            ]
+            .into_iter()
+            .filter(|present| *present)
+            .count();
+            if source_count != 1 {
+                errors.push(ValidationError {
+                    path,
+                    message: "must define exactly one volume source".to_string(),
+                });
+            }
+        }
+    }
+}
+
+fn validate_name(name: &str, path: &str, errors: &mut Vec<ValidationError>) {
+    if name.trim().is_empty() {
+        errors.push(ValidationError {
+            path: path.to_string(),
+            message: "cannot be empty".to_string(),
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::k8s_struct::{
+        Container, DeploymentSpec, LabelSelector, ObjectMeta, PodSpec, PodTemplateSpec,
+    };
+    use std::collections::HashMap;
+
+    #[test]
+    fn reports_empty_container_image() {
+        let deployment = Deployment {
+            api_version: "apps/v1".to_string(),
+            kind: "Deployment".to_string(),
+            metadata: ObjectMeta {
+                name: "backend".to_string(),
+                namespace: None,
+                labels: None,
+                annotations: None,
+            },
+            spec: DeploymentSpec {
+                replicas: Some(1),
+                selector: LabelSelector {
+                    match_labels: HashMap::new(),
+                },
+                template: PodTemplateSpec {
+                    metadata: ObjectMeta {
+                        name: "backend".to_string(),
+                        namespace: None,
+                        labels: None,
+                        annotations: None,
+                    },
+                    spec: PodSpec {
+                        containers: vec![Container {
+                            name: "backend".to_string(),
+                            image: " ".to_string(),
+                            image_pull_policy: None,
+                            command: None,
+                            args: None,
+                            working_dir: None,
+                            ports: None,
+                            env: None,
+                            env_from: None,
+                            resources: None,
+                            volume_mounts: None,
+                            liveness_probe: None,
+                            readiness_probe: None,
+                            startup_probe: None,
+                            security_context: None,
+                        }],
+                        init_containers: None,
+                        volumes: None,
+                        restart_policy: None,
+                        termination_grace_period_seconds: None,
+                        service_account_name: None,
+                        image_pull_secrets: None,
+                        node_selector: None,
+                        security_context: None,
+                    },
+                },
+                strategy: None,
+                min_ready_seconds: None,
+                revision_history_limit: None,
+                progress_deadline_seconds: None,
+                paused: None,
+            },
+        };
+        let mut errors = Vec::new();
+        validate_deployment(&deployment, &mut errors);
+        assert!(errors.iter().any(|error| error.path.ends_with(".image")));
+    }
 }

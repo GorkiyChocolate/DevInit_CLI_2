@@ -77,30 +77,20 @@ fn build_license_cli() -> Command {
 }
 
 fn build_login_cli() -> Command {
-    Command::new("login").about("Autentication")
-        .arg(
-            Arg::new("login_url")
-                .help("login via url")
-                .required(true)
-                .index(1),
-        )
+    Command::new("login").about("Autentication").arg(
+        Arg::new("login_url")
+            .help("login via url")
+            .required(true)
+            .index(1),
+    )
 }
 
 fn build_compile_cli() -> Command {
-    Command::new("compile").about("compiling")
-        .arg(
-            Arg::new("file_compile")
-                .help("compiling file configuration")
-                .required(true)
-                .index(1),
-        )
+    Command::new("compile").about("validate and generate compile.yaml")
 }
 
 fn build_test_cli() -> Command {
-    Command::new("test").about("testing")
-        .arg(
-            Arg::new("tester")
-                .help("test command")
-        )
+    Command::new("test")
+        .about("testing")
+        .arg(Arg::new("tester").help("test command"))
 }
-

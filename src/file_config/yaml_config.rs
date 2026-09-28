@@ -1,8 +1,24 @@
+use crate::errors::DevinitError;
+use crate::models::compile_struct::CompileSpec;
 use crate::models::docker_compose_struct::{ConfigsList, RecipeCompose};
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+pub fn load_compile(path: &Path) -> Result<CompileSpec, DevinitError> {
+    let contents = std::fs::read_to_string(path).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            DevinitError::ConfigurationError(format!(
+                "compile file '{}' was not found",
+                path.display()
+            ))
+        } else {
+            DevinitError::FileIOError(error)
+        }
+    })?;
+    Ok(serde_yaml::from_str(&contents)?)
+}
 
 pub fn yaml_data(config_struct: &RecipeCompose, path: &PathBuf) -> std::io::Result<()> {
     append_recipes(std::slice::from_ref(config_struct), path)

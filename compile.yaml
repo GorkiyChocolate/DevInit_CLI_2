@@ -1,0 +1,58 @@
+services:
+  - name: postgres
+    description: PostgreSQL database
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=devinit
+      - POSTGRES_PASSWORD=devinit
+  - name: backend
+    description: DevInit backend service
+    image: ghcr.io/example/backend:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:5432/app
+    depends_on:
+      - postgres
+
+kubernetes:
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: backend
+    labels:
+      app: backend
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: backend
+    template:
+      metadata:
+        name: backend
+        labels:
+          app: backend
+      spec:
+        containers:
+          - name: backend
+            image: ghcr.io/example/backend:latest
+            ports:
+              - containerPort: 8080
+
+cicd:
+  provider: github
+  triggers:
+    - type: push
+      branches:
+        - main
+  jobs:
+    - name: build
+      runner: ubuntu-latest
+      steps:
+        - name: Checkout
+          action: checkout
+        - name: Build
+          action: run
+          command: cargo build --locked

@@ -1,5 +1,6 @@
 #[tokio::main]
 async fn main() {
-    devinit_cli_2::cli_logic().await;
-    println!("runing cli_logic");
+    if devinit_cli_2::cli_logic().await.is_err() {
+        std::process::exit(1);
+    }
 }
