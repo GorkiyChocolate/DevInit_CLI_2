@@ -1,43 +1,8 @@
 services:
   - postgresql
   - redis
+  - rabbitmq
 
-kubernetes:
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: backend
-    labels:
-      app: backend
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: backend
-    template:
-      metadata:
-        name: backend
-        labels:
-          app: backend
-      spec:
-        containers:
-          - name: backend
-            image: ghcr.io/example/backend:latest
-            ports:
-              - containerPort: 8080
+kubernetes: null
 
-cicd:
-  provider: github
-  triggers:
-    - type: push
-      branches:
-        - main
-  jobs:
-    - name: build
-      runner: ubuntu-latest
-      steps:
-        - name: Checkout
-          action: checkout
-        - name: Build
-          action: run
-          command: cargo build --locked
+cicd: null
