@@ -30,7 +30,7 @@ fn print_validation_errors(errors: &[ValidationError]) {
     }
 }
 
-pub async fn cli_logic() -> Result<(), DevinitError> {
+pub fn cli_logic() -> Result<(), DevinitError> {
     let base_url = "http://127.0.0.1:3000/services/";
     let configs_url = "http://127.0.0.1:3000/configs/";
     let matches = commands::build_cli().get_matches();
@@ -42,7 +42,7 @@ pub async fn cli_logic() -> Result<(), DevinitError> {
                 .expect("Required argument");
 
             println!("Sending request for recipe: {}", recipe_name);
-            match add_recipe(recipe_name, base_url).await {
+            match add_recipe(recipe_name, base_url) {
                 Ok(recipe) => {
                     println!("Successfully retrieved recipe: {:?}", recipe);
                     let target_path = env::current_dir()
@@ -79,7 +79,7 @@ pub async fn cli_logic() -> Result<(), DevinitError> {
                 .expect("Required argument");
             println!("Getting repository from: {}", configs_url);
 
-            match get_config(configs_url, config_name).await {
+            match get_config(configs_url, config_name) {
                 Ok(configs_list) => {
                     println!("Succesfully retrieved configs: {:?}", configs_list);
                     let target_path = env::current_dir()
@@ -122,7 +122,7 @@ pub async fn cli_logic() -> Result<(), DevinitError> {
         },
 
         Some(("test", _)) => {
-            println!("generation requires a validated CompileSpec");
+            
         }
         _ => {
             println!("No subcommand provided. Use --help for usage instructions.");

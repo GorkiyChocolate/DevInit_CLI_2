@@ -1,4 +1,5 @@
 pub mod cicd_generator;
+pub mod docker_compose_generator;
 pub mod k8s_generator;
 pub mod writer;
 
@@ -8,6 +9,13 @@ use std::path::{Path, PathBuf};
 
 pub fn generate(spec: &CompileSpec, output_dir: &Path) -> Result<Vec<PathBuf>, GenerationError> {
     let mut generated = Vec::new();
+
+    if !spec.services.is_empty() {
+        generated.extend(docker_compose_generator::generate_docker_compose(
+            &spec.services,
+            output_dir,
+        )?);
+    }
 
     if let Some(kubernetes) = &spec.kubernetes {
         generated.extend(k8s_generator::generate_k8s(kubernetes, output_dir)?);
@@ -23,9 +31,11 @@ pub fn generate(spec: &CompileSpec, output_dir: &Path) -> Result<Vec<PathBuf>, G
 mod tests {
     use super::*;
     use crate::models::cicd_struct::{CiProvider, Pipeline};
+    use crate::models::compile_struct::CompileService;
     use crate::models::k8s_struct::{
         Container, Deployment, DeploymentSpec, LabelSelector, ObjectMeta, PodSpec, PodTemplateSpec,
     };
+    use crate::models::services_struct::Services;
     use std::collections::HashMap;
 
     fn deployment() -> Deployment {
@@ -92,7 +102,7 @@ mod tests {
         let output =
             std::env::temp_dir().join(format!("devinit-generator-test-{}", std::process::id()));
         let spec = CompileSpec {
-            services: Vec::new(),
+            services: vec![CompileService::BuiltIn(Services::Redis)],
             kubernetes: Some(deployment()),
             cicd: Some(Pipeline {
                 provider: CiProvider::Github,
@@ -102,7 +112,8 @@ mod tests {
         };
 
         let paths = generate(&spec, &output).expect("generation should succeed");
-        assert_eq!(paths.len(), 2);
+        assert_eq!(paths.len(), 3);
+        assert!(paths.contains(&output.join("docker-compose.yaml")));
         assert!(paths.contains(&output.join("k8s/backend-deployment.yaml")));
         assert!(paths.contains(&output.join(".github/workflows/devinit.yml")));
         let _ = std::fs::remove_dir_all(output);

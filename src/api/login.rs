@@ -1,16 +1,12 @@
-use reqwest::Client;
+use reqwest::blocking::Client;
 
-pub async fn login(company_url: &str) -> Result<bool, Box<dyn std::error::Error>> {
+pub fn login(company_url: &str) -> Result<bool, Box<dyn std::error::Error>> {
     let logining = Client::new()
         .post(company_url)
         .header("Accept", "application/json")
-        .send()
-        .await?
+        .send()?
         .error_for_status()?
-        .json::<bool>()
-        .await?;
+        .json::<bool>()?;
 
     Ok(logining)
 }
-
-//change the type of http method
