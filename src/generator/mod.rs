@@ -1,25 +1,41 @@
+pub mod cicd_generator;
+pub mod docker_compose_generator;
+pub mod k8s_generator;
+pub mod writer;
+
 use crate::errors::GenerationError;
-use crate::generator::writer::write_yaml;
-use crate::models::k8s_struct::Deployment;
+use crate::models::compile_struct::CompileSpec;
 use std::path::{Path, PathBuf};
 
-pub fn generate_k8s(
-    deployment: &Deployment,
-    output_dir: &Path,
-) -> Result<Vec<PathBuf>, GenerationError> {
-    let path = output_dir
-        .join("k8s")
-        .join(format!("{}-deployment.yaml", deployment.metadata.name));
-    let path = write_yaml(deployment, &path)?;
-    Ok(vec![path])
+pub fn generate(spec: &CompileSpec, output_dir: &Path) -> Result<Vec<PathBuf>, GenerationError> {
+    let mut generated = Vec::new();
+
+    if !spec.services.is_empty() {
+        generated.extend(docker_compose_generator::generate_docker_compose(
+            &spec.services,
+            output_dir,
+        )?);
+    }
+
+    if let Some(kubernetes) = &spec.kubernetes {
+        generated.extend(k8s_generator::generate_k8s(kubernetes, output_dir)?);
+    }
+    if let Some(cicd) = &spec.cicd {
+        generated.extend(cicd_generator::generate_cicd(cicd, output_dir)?);
+    }
+
+    Ok(generated)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::cicd_struct::{CiProvider, Pipeline};
+    use crate::models::compile_struct::CompileService;
     use crate::models::k8s_struct::{
-        Container, DeploymentSpec, LabelSelector, ObjectMeta, PodSpec, PodTemplateSpec,
+        Container, Deployment, DeploymentSpec, LabelSelector, ObjectMeta, PodSpec, PodTemplateSpec,
     };
+    use crate::models::services_struct::Services;
     use std::collections::HashMap;
 
     fn deployment() -> Deployment {
@@ -82,15 +98,24 @@ mod tests {
     }
 
     #[test]
-    fn generates_kubernetes_yaml_and_expected_path() {
-        let output = std::env::temp_dir().join(format!("devinit-k8s-test-{}", std::process::id()));
-        let paths = generate_k8s(&deployment(), &output).expect("generation should succeed");
-        assert_eq!(paths, vec![output.join("k8s/backend-deployment.yaml")]);
-        let contents = std::fs::read_to_string(&paths[0]).expect("generated file should exist");
-        assert!(contents.contains("apiVersion: apps/v1"));
-        assert!(contents.contains("kind: Deployment"));
-        generate_k8s(&deployment(), &output)
-            .expect("existing generated file should be replaceable");
+    fn generates_all_configured_targets() {
+        let output =
+            std::env::temp_dir().join(format!("devinit-generator-test-{}", std::process::id()));
+        let spec = CompileSpec {
+            services: vec![CompileService::BuiltIn(Services::Redis)],
+            kubernetes: Some(deployment()),
+            cicd: Some(Pipeline {
+                provider: CiProvider::Github,
+                triggers: Vec::new(),
+                jobs: Vec::new(),
+            }),
+        };
+
+        let paths = generate(&spec, &output).expect("generation should succeed");
+        assert_eq!(paths.len(), 3);
+        assert!(paths.contains(&output.join("docker-compose.yaml")));
+        assert!(paths.contains(&output.join("k8s/backend-deployment.yaml")));
+        assert!(paths.contains(&output.join(".github/workflows/devinit.yml")));
         let _ = std::fs::remove_dir_all(output);
     }
 }

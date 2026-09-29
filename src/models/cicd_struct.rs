@@ -76,16 +76,9 @@ pub struct Step {
 pub enum StepAction {
     Checkout,
 
-    Run {
-        command: String,
-    },
+    Run { command: String },
 
-    DockerBuild {
-        dockerfile: String,
-        image: String,
-    },
+    DockerBuild { dockerfile: String, image: String },
 
-    DockerPush {
-        image: String,
-    },
+    DockerPush { image: String },
 }

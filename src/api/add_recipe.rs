@@ -1,9 +1,7 @@
 use crate::models::docker_compose_struct::RecipeCompose;
-use reqwest::Client;
+use reqwest::blocking::Client;
 
-
-
-pub async fn add_recipe(
+pub fn add_recipe(
     recipe_name: &str,
     base_url: &str,
 ) -> Result<RecipeCompose, Box<dyn std::error::Error>> {
@@ -12,11 +10,9 @@ pub async fn add_recipe(
     let recipe = Client::new()
         .get(&url)
         .header("Accept", "application/json")
-        .send()
-        .await?
+        .send()?
         .error_for_status()?
-        .json::<RecipeCompose>()
-        .await?;
+        .json::<RecipeCompose>()?;
 
     Ok(recipe)
 }

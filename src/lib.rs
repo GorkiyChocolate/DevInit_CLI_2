@@ -12,26 +12,22 @@ pub mod file_config {
     pub mod yaml_config;
 }
 pub mod models {
-    pub mod docker_compose_struct;
-    pub mod k8s_struct;
     pub mod cicd_struct;
+    pub mod compile_struct;
+    pub mod docker_compose_struct;
     pub mod env_struct;
+    pub mod k8s_struct;
     pub mod services_struct;
 }
 
-pub mod validator{
-    pub mod k8s_validator;
+pub mod validator {
     pub mod cicd_validator;
     pub mod compile_validator;
+    pub mod k8s_validator;
     pub mod services_validator;
 }
 
-pub mod generator{
-    pub mod k8s_generator;
-    pub mod cicd_generator;
-}
-
-
+pub mod generator;
 
 pub mod errors;
-pub use cli::cli_logic::cli_logic;
+pub use crate::cli::cli_logic::cli_logic;

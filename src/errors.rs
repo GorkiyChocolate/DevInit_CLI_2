@@ -1,5 +1,20 @@
 use thiserror::Error;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidationError {
+    pub path: String,
+    pub message: String,
+}
+
+#[derive(Debug, Error)]
+pub enum GenerationError {
+    #[error("generation I/O failed: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("generation serialization failed: {0}")]
+    Serialization(#[from] serde_yaml::Error),
+}
+
 #[derive(Error, Debug)]
 pub enum DevinitError {
     #[error("HTTP request failed: {0}")]
@@ -10,6 +25,15 @@ pub enum DevinitError {
 
     #[error("File I/O error: {0}")]
     FileIOError(#[from] std::io::Error),
+
+    #[error("YAML parsing failed: {0}")]
+    YamlParseError(#[from] serde_yaml::Error),
+
+    #[error("configuration validation failed")]
+    ValidationErrors(Vec<ValidationError>),
+
+    #[error("file generation failed: {0}")]
+    GenerationError(#[from] GenerationError),
 
     #[error("Invalid input: {0}")]
     InvalidInput(String),
