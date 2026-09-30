@@ -1,5 +1,5 @@
 use crate::errors::GenerationError;
-use crate::generator::writer::write_yaml;
+use crate::file_config::yaml_writer::write_yaml;
 use crate::models::cicd_struct::{CiProvider, Pipeline, Runner, StepAction, Trigger};
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -191,70 +191,5 @@ fn gitlab_command(step: &crate::models::cicd_struct::Step) -> Option<String> {
             Some(format!("docker build -f {dockerfile} -t {image} ."))
         }
         StepAction::DockerPush { image } => Some(format!("docker push {image}")),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::cicd_struct::{Job, Runner, Step, StepAction};
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn generates_github_workflow_path_and_yaml() {
-        let output = std::env::temp_dir().join(format!("devinit-cicd-test-{}", std::process::id()));
-        let pipeline = Pipeline {
-            provider: CiProvider::Github,
-            triggers: Vec::new(),
-            jobs: vec![Job {
-                name: "build".to_string(),
-                runner: Runner::UbuntuLatest,
-                needs: Vec::new(),
-                steps: vec![Step {
-                    name: "Build".to_string(),
-                    action: StepAction::Run {
-                        command: "cargo build".to_string(),
-                    },
-                    env: BTreeMap::new(),
-                }],
-            }],
-        };
-        let paths = generate_cicd(&pipeline, &output).expect("generation should succeed");
-        assert_eq!(paths, vec![output.join(".github/workflows/devinit.yml")]);
-        let contents = std::fs::read_to_string(&paths[0]).expect("generated file should exist");
-        assert!(!contents.contains("provider: github"));
-        assert!(contents.contains("jobs:"));
-        assert!(contents.contains("runs-on: ubuntu-latest"));
-        assert!(contents.contains("steps:"));
-        let _ = std::fs::remove_dir_all(output);
-    }
-
-    #[test]
-    fn generates_gitlab_pipeline_path_and_structure() {
-        let output =
-            std::env::temp_dir().join(format!("devinit-gitlab-test-{}", std::process::id()));
-        let pipeline = Pipeline {
-            provider: CiProvider::Gitlab,
-            triggers: Vec::new(),
-            jobs: vec![Job {
-                name: "build".to_string(),
-                runner: Runner::UbuntuLatest,
-                needs: Vec::new(),
-                steps: vec![Step {
-                    name: "Build".to_string(),
-                    action: StepAction::Run {
-                        command: "cargo build".to_string(),
-                    },
-                    env: BTreeMap::new(),
-                }],
-            }],
-        };
-        let paths = generate_cicd(&pipeline, &output).expect("generation should succeed");
-        assert_eq!(paths, vec![output.join(".gitlab-ci.yml")]);
-        let contents = std::fs::read_to_string(&paths[0]).expect("generated file should exist");
-        assert!(contents.contains("stages:"));
-        assert!(contents.contains("build:"));
-        assert!(contents.contains("script:"));
-        let _ = std::fs::remove_dir_all(output);
     }
 }

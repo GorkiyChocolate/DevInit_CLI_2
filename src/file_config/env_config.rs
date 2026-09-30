@@ -1,6 +1,7 @@
+use crate::file_config::file_validator::ensure_name_is_new;
 use crate::models::docker_compose_struct::RecipeCompose;
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 
 pub fn env_file_config(recipe: &RecipeCompose, path: &Path) -> std::io::Result<()> {
@@ -12,13 +13,7 @@ pub fn env_file_config(recipe: &RecipeCompose, path: &Path) -> std::io::Result<(
         return Ok(());
     }
 
-    let existing_names = read_existing_names(path)?;
-    if existing_names.iter().any(|name| name == &recipe.name) {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
-            format!("Config '{}' already exists in env file", recipe.name),
-        ));
-    }
+    ensure_name_is_new(path, &recipe.name)?;
 
     let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
@@ -32,20 +27,4 @@ pub fn env_file_config(recipe: &RecipeCompose, path: &Path) -> std::io::Result<(
     }
 
     Ok(())
-}
-
-fn read_existing_names(path: &Path) -> std::io::Result<Vec<String>> {
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-
-    BufReader::new(File::open(path)?)
-        .lines()
-        .filter_map(|line| match line {
-            Ok(value) => value
-                .strip_prefix("# devinit config: ")
-                .map(|name| Ok(name.trim().to_owned())),
-            Err(error) => Some(Err(error)),
-        })
-        .collect()
 }

@@ -9,7 +9,9 @@ pub mod cli {
 }
 pub mod file_config {
     pub mod env_config;
+    pub mod file_validator;
     pub mod yaml_config;
+    pub mod yaml_writer;
 }
 pub mod models {
     pub mod cicd_struct;
@@ -27,7 +29,5 @@ pub mod validator {
     pub mod services_validator;
 }
 
-pub mod generator;
-
 pub mod errors;
-pub use crate::cli::cli_logic::cli_logic;
+pub mod generator;

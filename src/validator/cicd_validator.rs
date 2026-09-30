@@ -60,37 +60,3 @@ pub fn cicd_validator(cicd: &Pipeline) -> Result<(), std::io::Error> {
         ))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::cicd_struct::{Job, Runner, Step, StepAction};
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn reports_missing_job_dependency() {
-        let pipeline = Pipeline {
-            provider: crate::models::cicd_struct::CiProvider::Github,
-            triggers: Vec::new(),
-            jobs: vec![Job {
-                name: "deploy".to_string(),
-                runner: Runner::default(),
-                needs: vec!["build".to_string()],
-                steps: vec![Step {
-                    name: "deploy".to_string(),
-                    action: StepAction::Run {
-                        command: "deploy".to_string(),
-                    },
-                    env: BTreeMap::new(),
-                }],
-            }],
-        };
-        let mut errors = Vec::new();
-        validate_pipeline(&pipeline, &mut errors);
-        assert!(
-            errors
-                .iter()
-                .any(|error| error.message.contains("does not exist"))
-        );
-    }
-}

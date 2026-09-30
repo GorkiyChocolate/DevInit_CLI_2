@@ -1,22 +1,22 @@
 use crate::errors::DevinitError;
+use crate::file_config::file_validator::{ensure_file_not_empty, ensure_images_are_new};
 use crate::models::compile_struct::CompileSpec;
 use crate::models::docker_compose_struct::{ConfigsList, RecipeCompose};
-use std::collections::{HashMap, HashSet};
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
+use std::collections::HashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub fn load_compile(path: &Path) -> Result<CompileSpec, DevinitError> {
-    let contents = std::fs::read_to_string(path).map_err(|error| {
-        if error.kind() == std::io::ErrorKind::NotFound {
-            DevinitError::ConfigurationError(format!(
-                "compile file '{}' was not found",
-                path.display()
-            ))
-        } else {
-            DevinitError::FileIOError(error)
-        }
-    })?;
+    if !path.exists() {
+        return Err(DevinitError::ConfigurationError(format!(
+            "compile file '{}' was not found",
+            path.display()
+        )));
+    }
+    ensure_file_not_empty(path)?;
+    let contents =
+        std::fs::read_to_string(path).map_err(|error| DevinitError::FileIOError(error))?;
     Ok(serde_yaml::from_str(&contents)?)
 }
 
@@ -29,21 +29,10 @@ pub fn yaml_configs_data(configs_list: &ConfigsList, path: &PathBuf) -> std::io:
 }
 
 fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<()> {
-    let existing_images = read_existing_images(path)?;
-    let mut images_to_add = HashSet::new();
-
-    for recipe in recipes {
-        if existing_images.contains(&recipe.image) || !images_to_add.insert(recipe.image.clone()) {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                format!("Image '{}' already exists in YAML file", recipe.image),
-            ));
-        }
-    }
-
     if recipes.is_empty() {
         return Ok(());
     }
+    ensure_images_are_new(path, recipes)?;
 
     let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
@@ -62,23 +51,4 @@ fn append_recipes(recipes: &[RecipeCompose], path: &PathBuf) -> std::io::Result<
     }
 
     Ok(())
-}
-
-fn read_existing_images(path: &PathBuf) -> std::io::Result<HashSet<String>> {
-    if !path.exists() {
-        return Ok(HashSet::new());
-    }
-
-    let mut file = File::open(path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-
-    if contents.trim().is_empty() {
-        return Ok(HashSet::new());
-    }
-
-    let recipes: HashMap<String, RecipeCompose> = serde_yaml::from_str(&contents)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-
-    Ok(recipes.into_values().map(|recipe| recipe.image).collect())
 }
