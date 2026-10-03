@@ -19,6 +19,7 @@ pub mod models {
     pub mod docker_compose_struct;
     pub mod env_struct;
     pub mod k8s_struct;
+    pub mod resolver_struct;
     pub mod services_struct;
 }
 
@@ -27,6 +28,14 @@ pub mod validator {
     pub mod compile_validator;
     pub mod k8s_validator;
     pub mod services_validator;
+}
+pub mod resolved_spec {
+
+    pub mod resolver;
+}
+
+pub mod docker {
+    pub mod docker_finder;
 }
 
 pub mod errors;
